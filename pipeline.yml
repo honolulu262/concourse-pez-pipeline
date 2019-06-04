@@ -1,0 +1,4 @@
+---
+jobs:
+  - name: install-pas
+    public: true
