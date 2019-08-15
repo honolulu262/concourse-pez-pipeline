@@ -2,5 +2,5 @@
 pivnet-api-token: "c5a7d0e445444358908beffe208859a8-r"
 pivnet-file-glob: "*vsphere*.ova"
 pivnet-product-slug: "ops-manager"
-product-version: "2.6.3(.*)"
+product-version: "2.6.3"
 download-stemcell: false
