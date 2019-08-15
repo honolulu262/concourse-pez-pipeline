@@ -1,0 +1,7 @@
+---
+pivnet-api-token: "c5a7d0e445444358908beffe208859a8-r"
+pivnet-file-glob: "*pivotal"
+pivnet-product-slug: "p-healthwatch"
+product-version: "1.6.1"
+download-stemcell: true
+stemcell-iaas: "vsphere"
