@@ -1,0 +1,26 @@
+---
+opsman-configuration:
+  vsphere:
+    vcenter:
+      url: vcsa-01.haas-222.pez.pivotal.io
+      username: Administrator@vsphere.local
+      password: ((vcenter_password))
+      datastore: LUN01
+      host: sc2-host-b112-03.haas-222.pez.pivotal.io      # vSphere ESXi hostname (Found in vSphere UI under Cluster)
+      datacenter: Datacenter
+#      resource_pool: /Datacenter/host/Cluster/Resources/pas-az1 # or /<Data Center Name>/host/<Cluster Name>
+      resource_pool: /Datacenter/host/Cluster # or /<Data Center Name>/host/<Cluster Name>
+      folder: /Datacenter
+      insecure: 1                            # default: 0 (secure); 1 (insecure)
+    disk_type: thin                          # example: thin|thick
+    private_ip: 10.193.183.6
+    dns: 10.192.2.10
+    ntp: time.svc.pivotal.io                 # example: ntp.ubuntu.com
+    ssh_public_key: ((opsman_ssh_key.public_key))       # for OpsManager >= 2.3
+    hostname: opsmgr-01.haas-222.pez.pivotal.io
+    network: PAS-Infrastructure              # vcenter network to deploy to
+    netmask: 255.255.255.0
+    gateway: 10.193.183.1
+    vm_name: opsmgr-01                  # default: Ops_Manager
+    memory: 8                                # default: 8 GB
+    cpu: 1                                   # default: 1

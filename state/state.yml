@@ -1,0 +1,4 @@
+---
+iaas: vsphere
+# Path to the VM in vCenter
+vm_id: /Datacenter/vm/folder/vm_name

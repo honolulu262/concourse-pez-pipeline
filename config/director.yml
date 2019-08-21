@@ -1,0 +1,101 @@
+---
+az-configuration:
+- name: pas-az1
+  clusters:
+  - cluster: Cluster
+    resource_pool: pas-az1
+- name: pas-az2
+  clusters:
+  - cluster: Cluster
+    resource_pool: pas-az2
+- name: pas-az3
+  clusters:
+  - cluster: Cluster
+    resource_pool: pas-az3
+network-assignment:
+  network:
+    name: PAS-Infrastructure
+  other_availability_zones: []
+  singleton_availability_zone:
+    name: pas-az1
+networks-configuration:
+  icmp_checks_enabled: false
+  networks:
+  - name: PAS-Infrastructure
+    subnets:
+    - iaas_identifier: PAS-Infrastructure
+      cidr: 10.193.183.0/24
+      dns: 10.192.2.10,10.192.2.11
+      gateway: 10.193.183.1
+      reserved_ip_ranges: 10.193.183.1-10.193.183.230,10.193.183.249-10.193.183.255
+      availability_zone_names:
+      - pas-az1
+      - pas-az2
+      - pas-az3
+  - name: PAS-Deployment
+    subnets:
+    - iaas_identifier: PAS-Deployment
+      cidr: 10.193.183.0/24
+      dns: 10.192.2.10,10.192.2.11
+      gateway: 10.193.183.1
+      reserved_ip_ranges: 10.193.183.1-10.193.183.30,10.193.183.231-10.193.183.248,10.193.183.251-10.193.183.255
+      availability_zone_names:
+      - pas-az1
+      - pas-az2
+      - pas-az3
+  - name: PAS-Services
+    subnets:
+    - iaas_identifier: PAS-Services
+      cidr: 10.195.42.0/24
+      dns: 10.192.2.10,10.192.2.11
+      gateway: 10.195.42.1
+      reserved_ip_ranges: 10.195.42.1-10.195.42.10,10.195.42.201-10.195.42.255
+      availability_zone_names:
+      - pas-az1
+      - pas-az2
+      - pas-az3
+properties-configuration:
+  director_configuration:
+    blobstore_type: local
+    bosh_recreate_on_next_deploy: false
+    bosh_recreate_persistent_disks_on_next_deploy: false
+    database_type: internal
+    director_worker_count: 5
+    encryption:
+      keys: []
+      providers: []
+    hm_emailer_options:
+      enabled: false
+    hm_pager_duty_options:
+      enabled: false
+    identification_tags: {}
+    job_configuration_on_tmpfs: false
+    keep_unreachable_vms: false
+    local_blobstore_options:
+      tls_enabled: true
+    ntp_servers_string: time.svc.pivotal.io
+    post_deploy_enabled: false
+    resurrector_enabled: false
+    retry_bosh_deploys: false
+    skip_director_drain: false
+  dns_configuration:
+    excluded_recursors: []
+    handlers: []
+  security_configuration:
+    opsmanager_root_ca_trusted_certs: true
+    trusted_certificates: ((director-trusted-ca.certificate))
+  syslog_configuration:
+    enabled: false
+resource-configuration:
+  compilation:
+    instances: automatic
+    instance_type:
+      id: automatic
+  director:
+    instances: automatic
+    persistent_disk:
+      size_mb: automatic
+    instance_type:
+      id: automatic
+vmextensions-configuration: []
+vmtypes-configuration: {}
