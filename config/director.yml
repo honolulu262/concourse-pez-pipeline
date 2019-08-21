@@ -98,4 +98,3 @@ resource-configuration:
     instance_type:
       id: automatic
 vmextensions-configuration: []
-vmtypes-configuration: {}
