@@ -1,4 +1,4 @@
 ---
 iaas: vsphere
 # Path to the VM in vCenter
-vm_id: /Datacenter/Cluster/opsmgr-01
+vm_id: /Datacenter/vm/opsmgr-01
