@@ -101,8 +101,7 @@ credhub-interpolate: &credhub-interpolate
     CREDHUB_SERVER: ((credhub-server))
     CREDHUB_CA_CERT: ((credhub-ca.certificate))
     PREFIX: '/concourse/((ENVIRONMENT))'
-    INTERPOLATION_PATHS: 
-      - ((ENVIRONMENT))/download-product-configs
+    INTERPOLATION_PATHS: '((ENVIRONMENT))/download-product-configs'
   input_mapping:
     files: config
   output_mapping:
