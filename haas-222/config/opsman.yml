@@ -10,7 +10,7 @@ opsman-configuration:
       datacenter: Datacenter
 #      resource_pool: /Datacenter/host/Cluster/Resources/pas-az1 # or /<Data Center Name>/host/<Cluster Name>
       resource_pool: /Datacenter/host/Cluster # or /<Data Center Name>/host/<Cluster Name>
-      folder: /Datacenter
+      folder: /Datacenter/vm
       insecure: 1                            # default: 0 (secure); 1 (insecure)
     disk_type: thin                          # example: thin|thick
     private_ip: 10.193.183.6
