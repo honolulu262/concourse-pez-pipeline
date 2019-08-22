@@ -254,9 +254,9 @@ jobs:
       file: platform-automation-tasks/tasks/upload-product.yml
       input_mapping:
         product: pas-product
-        env: product-configs
+        env: interpolated-config
       params:
-        ENV_FILE: env/env.yml
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
     - task: stage-product
       image: platform-automation-image
       file: platform-automation-tasks/tasks/stage-product.yml
