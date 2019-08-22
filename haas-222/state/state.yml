@@ -1,3 +1,2 @@
 ---
 iaas: vsphere
-vm_id: /Datacenter/vm/opsmgr-01
