@@ -37,6 +37,24 @@ resources:
     secret_access_key: ((s3.password))
     regexp: healthwatch-stemcell/bosh-stemcell-(.*)-vsphere.*\.tgz
 
+- name: mysql-product
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: pivotal-mysql-(.*).pivotal
+
+- name: mysql-stemcell
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: mysql-stemcell/bosh-stemcell-(.*)-vsphere.*\.tgz
+
 - name: opsman-product
   type: s3
   source:
@@ -137,6 +155,36 @@ jobs:
     - put: healthwatch-stemcell
       params:
         file: healthwatch-stemcell/*.tgz
+
+- name: fetch-mysql
+  plan:
+  - aggregate:
+    - get: daily
+      trigger: true
+    - get: platform-automation-image
+      passed: [fetch-platform-automation]
+      params:
+        unpack: true
+    - get: platform-automation-tasks
+      passed: [fetch-platform-automation]
+      params:
+        unpack: true
+    - get: config
+  - task: credhub-interpolate
+    <<: *credhub-interpolate
+  - task: download-mysql-product-and-stemcell
+    image: platform-automation-image
+    file: platform-automation-tasks/tasks/download-product.yml
+    params:
+      CONFIG_FILE: ((ENVIRONMENT))/download-product-configs/mysql.yml
+    output_mapping: {downloaded-stemcell: mysql-stemcell}
+  - aggregate:
+    - put: mysql-product
+      params:
+        file: downloaded-product/*.pivotal
+    - put: mysql-stemcell
+      params:
+        file: mysql-stemcell/*.tgz
 
 - name: fetch-opsman
   plan:

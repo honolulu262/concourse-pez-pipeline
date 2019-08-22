@@ -9,6 +9,24 @@ resources:
     secret_access_key: ((s3.password))
     regexp: ops-manager-vsphere-(.*).ova
 
+- name: pas-stemcell
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: pas-stemcell/bosh-stemcell-(.*)-vsphere.*\.tgz
+
+- name: pas-product
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: cf-(.*).pivotal
+
 - name: platform-automation-tasks
   type: s3
   source:
@@ -42,7 +60,7 @@ resources:
     private_key: ((git.private_key))
     uri: git@github.com:tythomas/concourse-pez-pipeline.git
     branch: master
-    paths: [((ENVIRONMENT))/env/* ((ENVIRONMENT))/config/* ((ENVIRONMENT))/state/*]
+    paths: [((ENVIRONMENT))/env/* ((ENVIRONMENT))/config/* ((ENVIRONMENT))/state/* ((ENVIRONMENT))/download-product-configs/*]
 
 - name: one-time-trigger
   type: time
@@ -212,4 +230,92 @@ jobs:
       input_mapping:
         env: interpolated-config
       params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: upload-and-stage-pas
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - upgrade-opsman
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: pas-product
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: upload-product
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/upload-product.yml
+      input_mapping:
+        product: pas-product
+        env: product-configs
+      params:
+        ENV_FILE: env/env.yml
+    - task: stage-product
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/stage-product.yml
+      input_mapping:
+        product: pas-product
+        env: interpolated-config
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: upload-stemcells
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - upgrade-opsman
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: pas-stemcell
+        trigger: true
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: upload-pas-stemcell
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/upload-stemcell.yml
+      input_mapping:
+        env: interpolated-config
+        stemcell: pas-stemcell
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: configure-pas
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - upload-and-stage-pas
+          - upload-stemcells
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: configure-pas
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/configure-product.yml
+      input_mapping:
+        config: interpolated-config
+        env: interpolated-config
+      params:
+        CONFIG_FILE: ((ENVIRONMENT))/config/cf.yml
         ENV_FILE: ((ENVIRONMENT))/env/env.yml
