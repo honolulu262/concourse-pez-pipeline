@@ -27,6 +27,42 @@ resources:
     secret_access_key: ((s3.password))
     regexp: cf-(.*).pivotal
 
+- name: mysql-product
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: pivotal-mysql-(.*).pivotal
+
+- name: mysql-stemcell
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: mysql-stemcell/bosh-stemcell-(.*)-vsphere.*\.tgz
+
+- name: healthwatch-product
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: p-healthwatch-(.*).pivotal
+
+- name: healthwatch-stemcell
+  type: s3
+  source:
+    access_key_id: ((s3.username))
+    bucket: ((s3_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3.password))
+    regexp: healthwatch-stemcell/bosh-stemcell-(.*)-vsphere.*\.tgz
+
 - name: platform-automation-tasks
   type: s3
   source:
@@ -266,6 +302,74 @@ jobs:
       params:
         ENV_FILE: ((ENVIRONMENT))/env/env.yml
 
+- name: upload-and-stage-mysql
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - configure-pas
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: mysql-product
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: upload-product
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/upload-product.yml
+      input_mapping:
+        product: mysql-product
+        env: interpolated-config
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+    - task: stage-product
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/stage-product.yml
+      input_mapping:
+        product: mysql-product
+        env: interpolated-config
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: upload-and-stage-healthwatch
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - configure-pas
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: healthwatch-product
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: upload-product
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/upload-product.yml
+      input_mapping:
+        product: healthwatch-product
+        env: interpolated-config
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+    - task: stage-product
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/stage-product.yml
+      input_mapping:
+        product: healthwatch-product
+        env: interpolated-config
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
 - name: upload-stemcells
   serial: true
   plan:
@@ -281,6 +385,8 @@ jobs:
           unpack: true
       - get: pas-stemcell
         trigger: true
+      - get: mysql-stemcell
+        trigger: true
       - get: config
     - task: credhub-interpolate
       <<: *credhub-interpolate
@@ -290,6 +396,22 @@ jobs:
       input_mapping:
         env: interpolated-config
         stemcell: pas-stemcell
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+    - task: upload-mysql-stemcell
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/upload-stemcell.yml
+      input_mapping:
+        env: interpolated-config
+        stemcell: mysql-stemcell
+      params:
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+    - task: upload-healthwatch-stemcell
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/upload-stemcell.yml
+      input_mapping:
+        env: interpolated-config
+        stemcell: healthwatch-stemcell
       params:
         ENV_FILE: ((ENVIRONMENT))/env/env.yml
 
@@ -317,5 +439,84 @@ jobs:
         config: interpolated-config
         env: interpolated-config
       params:
-        CONFIG_FILE: ((ENVIRONMENT))/config/cf.yml
+        CONFIG_FILE: ((ENVIRONMENT))/config/pas.yml
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: configure-mysql
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - upload-and-stage-mysql
+          - upload-stemcells
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: configure-mysql
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/configure-product.yml
+      input_mapping:
+        config: interpolated-config
+        env: interpolated-config
+      params:
+        CONFIG_FILE: ((ENVIRONMENT))/config/mysql.yml
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: configure-healthwatch
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - upload-and-stage-healthwatch
+          - upload-stemcells
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: configure-healthwatch
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/configure-product.yml
+      input_mapping:
+        config: interpolated-config
+        env: interpolated-config
+      params:
+        CONFIG_FILE: ((ENVIRONMENT))/config/healthwatch.yml
+        ENV_FILE: ((ENVIRONMENT))/env/env.yml
+
+- name: apply-product-changes
+  serial: true
+  plan:
+    - aggregate:
+      - get: platform-automation-image
+        params:
+          unpack: true
+        passed:
+          - configure-pas
+          - configure-mysql
+        trigger: true
+      - get: platform-automation-tasks
+        params:
+          unpack: true
+      - get: config
+    - task: credhub-interpolate
+      <<: *credhub-interpolate
+    - task: apply-product-changes
+      image: platform-automation-image
+      file: platform-automation-tasks/tasks/apply-changes.yml
+      input_mapping:
+        env: interpolated-config
+      params:
         ENV_FILE: ((ENVIRONMENT))/env/env.yml
